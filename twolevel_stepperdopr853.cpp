@@ -12,6 +12,7 @@ namespace BFS=boost::filesystem;
 using namespace std;
 const Doub pi = acos(-1);
 const int nvar=3;	//	微分方程组未知数个数
+const double mu = 1.0e-29 / 1.60217653e-19 / 5.291772108e-11;		//偶极跃迁几率a.u.
 static double omega_0;		//二能级原子跃迁频率,原子单位,5.36来自YangWeiFeng
 static double omega_L = 0.056;	//基频场频率，原子单位 a.u.
 static double rabbi_0;		//基频场拉比频率，原子单位
@@ -36,27 +37,27 @@ struct rhs_van {
 		chirp_phase = -IF_Chirp*eta*tanh(x / tao);
 		if (laserchoice == 0) {
 			if (x >= -cycles_g / 2.0*T&&x <= cycles_g / 2.0*T) {
-				rabbi_tmp = -rabbi_0*sin(omega_L*x);
+				rabbi_tmp = rabbi_0*sin(omega_L*x);
 			}
 			else {
 				rabbi_tmp=0.0;
 			}
 		}
 		else if (laserchoice == 1) {
-			rabbi_tmp = -rabbi_0*exp(-4 * log(2)*x*x/dur/dur)*cos(omega_L*x + chirp_phase);	//高斯型激光场
+			rabbi_tmp = rabbi_0*exp(-4 * log(2)*x*x/dur/dur)*cos(omega_L*x + chirp_phase);	//高斯型激光场
 		}
 		else if (laserchoice == 2) {
 			if (x >= -cycles_g*T&&x <= cycles_g*T) {
-				rabbi_tmp = -rabbi_0*pow(sin(pi*(x + cycles_g*T) / (cycles_g*2.0*T)), 2)*cos(omega_L*x + chirp_phase);
+				rabbi_tmp = rabbi_0*pow(sin(pi*(x + cycles_g*T) / (cycles_g*2.0*T)), 2)*cos(omega_L*x + chirp_phase);
 			}
 			else {
 				rabbi_tmp = 0.0;
 			}
 		}
 
-		dydx[0] = -omega_0*y[1] - 2.0*xi*rabbi_tmp * y[1];
-		dydx[1] = omega_0*y[0] + 2.0*xi*rabbi_tmp * y[0] - 2.0*rabbi_tmp * y[2];
-		dydx[2] = 2.0*rabbi_tmp * y[1];
+		dydx[0] = -omega_0*y[1] + 2.0*xi*rabbi_tmp * y[1];
+		dydx[1] =  omega_0*y[0] - 2.0*xi*rabbi_tmp * y[0] + 2.0*rabbi_tmp * y[2];
+		dydx[2] = -2.0*rabbi_tmp * y[1];
 	}
 };
 
@@ -75,7 +76,6 @@ int main(int argc, char* argv[])
 	///matter parameters///
 	cout << "输入能级跃迁频率omega_0：";
 	cin >> omega_0;
-	double mu = 1.0e-29 / 1.60217653e-19 / 5.291772108e-11;		//偶极跃迁几率a.u.
 	double mu_11, mu_22;
 
 	cout << "分别输入固有偶极矩mu_11/mu_22(单位以偶极跃迁矩阵元mu的倍数)： " << endl;
@@ -149,25 +149,25 @@ int main(int argc, char* argv[])
 
 		if (laserchoice == 0){
 			if (t >= -cycles_g / 2.0*T&&t <= cycles_g / 2.0*T){
-				laser_field[i]= -(-rabbi_0) / mu*sin(omega_L*t);
+				rabbi[i]= rabbi_0*sin(omega_L*t);
 			}
 			else{
-				laser_field[i] = 0.0;
+				rabbi[i] = 0.0;
 			}	
 		}
 		else if (laserchoice==1){
-			laser_field[i] = -(-rabbi_0) / mu*exp(-4 * log(2)*t*t / dur / dur)*cos(omega_L*t + chirp_phase);	//高斯型激光场
+			rabbi[i] = rabbi_0*exp(-4 * log(2)*t*t / dur / dur)*cos(omega_L*t + chirp_phase);	//高斯型激光场
 		}
 		else if (laserchoice == 2){
 			if (t >= -cycles_g*T&&t <= cycles_g*T){
-				laser_field[i] = -(-rabbi_0) / mu*pow(sin(pi*(t + cycles_g*T) / (cycles_g*2.0*T)), 2)*cos(omega_0*t + chirp_phase);
+				rabbi[i] = rabbi_0*pow(sin(pi*(t + cycles_g*T) / (cycles_g*2.0*T)), 2)*cos(omega_0*t + chirp_phase);
 			}
 			else{
-				laser_field[i] = 0.0;
+				rabbi[i] = 0.0;
 			}
 		}
 
-		rabbi[i] = -mu*laser_field[i];
+		laser_field[i]=rabbi[i]/mu;
 
 		time_output<<t/T<<endl;
 		lasersource_output<<laser_field[i]<<endl;
@@ -210,8 +210,7 @@ int main(int argc, char* argv[])
 //	}
 	for (i = 0; i<out.count-2; i++){
 //		dipole<<mu*out.ysave[0][i]<<endl;
-		dipole << out.xsave[i]/T << " " 
-			<< mu*out.ysave[0][i] + mu_11*(1.0 - out.ysave[2][i]) / 2.0 + mu_22*(1.0 + out.ysave[2][i]) / 2.0 <<" "
+		dipole << mu*out.ysave[0][i] + mu_11*(1.0 - out.ysave[2][i]) / 2.0 + mu_22*(1.0 + out.ysave[2][i]) / 2.0 <<" "
 			<< mu*out.ysave[0][i]<<endl;
 	}
 	dipole.close();	
