@@ -24,7 +24,7 @@ static double T;
 static double dur;
 static int IF_Chirp;
 static double eta = 6.25;
-static double tao = 120;
+static double tao = 120.0;
 static double chirp_phase;
 
 template <class Ty>
@@ -44,7 +44,7 @@ struct rhs_van {
 			}
 		}
 		else if (laserchoice == 1) {
-			rabbi_tmp = rabbi_0*exp(-4 * log(2)*x*x/dur/dur)*cos(omega_L*x + chirp_phase);	//高斯型激光场
+			rabbi_tmp = rabbi_0*exp(-4.0 * log(2.0)*x*x/dur/dur)*cos(omega_L*x + chirp_phase);	//高斯型激光场
 		}
 		else if (laserchoice == 2) {
 			if (x >= -cycles_g*T&&x <= cycles_g*T) {
@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
 	double t = tstart;						//表征脉冲时刻
 	for (i = 0; i < (NT-1); i++){
 		if (IF_Chirp == 0){
-			chirp_phase = 0;
+			chirp_phase = 0.0;
 		}
 		else{
 			chirp_phase = -eta*tanh(t / tao);
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 			}	
 		}
 		else if (laserchoice==1){
-			rabbi[i] = rabbi_0*exp(-4 * log(2)*t*t / dur / dur)*cos(omega_L*t + chirp_phase);	//高斯型激光场
+			rabbi[i] = rabbi_0*exp(-4.0 * log(2.0)*t*t / dur / dur)*cos(omega_L*t + chirp_phase);	//高斯型激光场
 		}
 		else if (laserchoice == 2){
 			if (t >= -cycles_g*T&&t <= cycles_g*T){
